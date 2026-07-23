@@ -31,7 +31,7 @@ export default function LoginPage() {
         <div className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full bg-violet-500/8 blur-[100px]" />
       </div>
 
-      <div className="relative z-10 w-2/5 min-w-[468px]">
+      <div className="relative z-10 w-2/5 min-w-[368px]">
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
