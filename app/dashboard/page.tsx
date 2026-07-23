@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -21,6 +21,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  const [activeCard, setActiveCard] = useState<string | null>(null)
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
     async function load() {
@@ -35,6 +37,20 @@ export default function DashboardPage() {
     }
     load()
   }, [])
+
+  // Klik di luar card → tutup menu
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (!activeCard) return
+      const activeEl = cardRefs.current[activeCard]
+      if (activeEl && !activeEl.contains(e.target as Node)) {
+        setActiveCard(null)
+        setDeleteConfirm(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [activeCard])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -60,12 +76,14 @@ export default function DashboardPage() {
     await supabase.from("notes").delete().eq("id", id)
     setNotes(prev => prev.filter(n => n.id !== id))
     setDeleteConfirm(null)
+    setActiveCard(null)
   }
 
   function handleEdit(note: Note) {
     setEditId(note.id)
     setTitle(note.title)
     setContent(note.content ?? "")
+    setActiveCard(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -76,6 +94,11 @@ export default function DashboardPage() {
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push("/login")
+  }
+
+  function handleCardClick(noteId: string) {
+    if (deleteConfirm) { setDeleteConfirm(null); return }
+    setActiveCard(prev => prev === noteId ? null : noteId)
   }
 
   const filtered = notes.filter(n =>
@@ -213,70 +236,83 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map((note) => (
-              <div
-                key={note.id}
-                className={`group bg-[#1E2440]/60 border rounded-2xl p-5 transition-all duration-200 hover:border-indigo-500/20 hover:bg-[#1E2440]/80 ${
-                  editId === note.id ? 'border-indigo-500/30 bg-[#1E2440]/80' : 'border-white/5'
-                }`}
-              >
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm md:text-md text-[#F0F4FF] leading-snug">
-                      {note.title}
-                    </h3>
-                    {note.content && (
-                      <p className="text-[#8892B0] text-xs md:text-sm mt-2 line-clamp-2 leading-relaxed">
-                        {note.content}
+            {filtered.map((note) => {
+              const isActive = activeCard === note.id
+              return (
+                <div
+                  key={note.id}
+                  ref={el => { cardRefs.current[note.id] = el }}
+                  onClick={() => handleCardClick(note.id)}
+                  className={`group bg-[#1E2440]/60 border rounded-2xl p-5 transition-all duration-200 cursor-pointer select-none
+                    hover:border-indigo-500/20 hover:bg-[#1E2440]/80
+                    ${editId === note.id ? 'border-indigo-500/30 bg-[#1E2440]/80' : 'border-white/5'}
+                    ${isActive ? '!border-indigo-500/30 !bg-[#1E2440]/80' : ''}
+                  `}
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm md:text-md text-[#F0F4FF] leading-snug">
+                        {note.title}
+                      </h3>
+                      {note.content && (
+                        <p className="text-[#8892B0] text-xs md:text-sm mt-2 line-clamp-2 leading-relaxed">
+                          {note.content}
+                        </p>
+                      )}
+                      <p className="text-[10px] md:text-sm text-[#4A5568] mt-3">
+                        {new Date(note.created_at).toLocaleDateString("id-ID", {
+                          day: "numeric", month: "long", year: "numeric"
+                        })}
                       </p>
-                    )}
-                    <p className="text-[10px] md:text-sm text-[#4A5568] mt-3">
-                      {new Date(note.created_at).toLocaleDateString("id-ID", {
-                        day: "numeric", month: "long", year: "numeric"
-                      })}
-                    </p>
-                  </div>
+                    </div>
 
-                  <div className="flex gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => handleEdit(note)}
-                      className="p-2 text-[#8892B0] hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"
-                      title="Edit"
+                    {/* Action buttons: hover (desktop) OR tap (mobile) */}
+                    <div
+                      onClick={e => e.stopPropagation()}
+                      className={`flex gap-2 shrink-0 transition-opacity duration-200
+                        ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+                      `}
                     >
-                      <svg width="20" height="20" viewBox="0 0 13 13" fill="none">
-                        <path d="M9 1.5l2.5 2.5-7 7H2V8.5l7-7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-
-                    {deleteConfirm === note.id ? (
-                      <div className="flex flex-col items-center gap-1 bg-[#1E2440]/80 border border-indigo-500/20 rounded-lg px-3 py-2">
-                        <span className="text-[13px] text-white font-bold">Hapus?</span>
-                        <div className='flex gap-2'>
-                          <button
-                            onClick={() => handleDelete(note.id)}
-                            className="text-[12px] bg-red-600 text-red-200 hover:text-red-600 hover:bg-red-200 rounded-md font-medium px-3 py-1 cursor-pointer transition-colors"
-                          >Ya</button>
-                          <button
-                            onClick={() => setDeleteConfirm(null)}
-                            className="text-[12px] text-gray-100 bg-gray-600 hover:bg-gray-100 hover:text-gray-600 rounded-md px-3 py-1 cursor-pointer transition-colors"
-                          >Batal</button>
-                        </div>
-                      </div>
-                    ) : (
                       <button
-                        onClick={() => setDeleteConfirm(note.id)}
-                        className="p-2 text-[#8892B0] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                        title="Hapus"
+                        onClick={() => handleEdit(note)}
+                        className="p-2 text-[#8892B0] hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"
+                        title="Edit"
                       >
                         <svg width="20" height="20" viewBox="0 0 13 13" fill="none">
-                          <path d="M2 3.5h9M5 3.5V2.5h3v1M4 3.5l.5 7h4l.5-7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M9 1.5l2.5 2.5-7 7H2V8.5l7-7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
                         </svg>
                       </button>
-                    )}
+
+                      {deleteConfirm === note.id ? (
+                        <div className="flex flex-col items-center gap-1 bg-[#1E2440]/80 border border-indigo-500/20 rounded-lg px-3 py-2">
+                          <span className="text-[13px] text-white font-bold">Hapus?</span>
+                          <div className='flex gap-2'>
+                            <button
+                              onClick={() => handleDelete(note.id)}
+                              className="text-[12px] bg-red-600 text-red-200 hover:text-red-600 hover:bg-red-200 rounded-md font-medium px-3 py-1 cursor-pointer transition-colors"
+                            >Ya</button>
+                            <button
+                              onClick={() => setDeleteConfirm(null)}
+                              className="text-[12px] text-gray-100 bg-gray-600 hover:bg-gray-100 hover:text-gray-600 rounded-md px-3 py-1 cursor-pointer transition-colors"
+                            >Batal</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirm(note.id)}
+                          className="p-2 text-[#8892B0] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                          title="Hapus"
+                        >
+                          <svg width="20" height="20" viewBox="0 0 13 13" fill="none">
+                            <path d="M2 3.5h9M5 3.5V2.5h3v1M4 3.5l.5 7h4l.5-7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
