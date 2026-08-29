@@ -2,6 +2,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Calendar, FileText, Home, LogOut, NotebookPen, Pencil, Search, Trash2, X } from 'lucide-react'
 
 type Note = {
   id: string
@@ -106,100 +108,167 @@ export default function DashboardPage() {
     (n.content ?? "").toLowerCase().includes(search.toLowerCase())
   )
 
-  return (
-    <div className="min-h-screen bg-[#0A0F1E] text-[#F0F4FF]">
+  const totalWords = notes.reduce(
+    (acc, n) => acc + `${n.title} ${n.content ?? ""}`.trim().split(/\s+/).filter(Boolean).length,
+    0
+  )
+  const now = new Date()
+  const thisMonthCount = notes.filter(n => {
+    const d = new Date(n.created_at)
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  }).length
 
-      {/* Ambient */}
+  return (
+    <div className="relative min-h-screen bg-[#06080F] text-[#E2E8F0]">
+
+      {/* Ambient background — konsisten dengan landing & auth */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-indigo-600/8 blur-[120px]" />
-        <div className="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full bg-violet-500/6 blur-[100px]" />
+        <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-indigo-900/20 blur-[140px]" />
+        <div className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-violet-900/15 blur-[140px]" />
+        <div className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-blue-900/10 blur-[120px]" />
       </div>
 
+      {/* Grid pattern overlay */}
+      <div className="pointer-events-none fixed inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `radial-gradient(circle, #6366f1 1px, transparent 1px)`,
+          backgroundSize: '24px 24px'
+        }}
+      />
+
       {/* Navbar */}
-      <header className="z-20 sticky top-0 bg-[#0A0F1E]/80 backdrop-blur-md border-b border-white/5">
-        <div className="mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src="/FlashNote.png" alt="FlashNote.png" className='w-8 h-8'/>
-            <div>
-              <span className="font-semibold text-[#F0F4FF] italic text-xl tracking-tight">
-                Flash
-                <span className='text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400'>
-                  Note.
-                </span>
+      <header className="sticky top-0 z-20 bg-[#06080F]/80 backdrop-blur-md border-b border-white/[0.06]">
+        <div className="max-w-4xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14,2 14,8 20,8"/>
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <span className="font-bold text-xl tracking-tight text-white leading-none block">
+                Flash<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">Note</span>
               </span>
-              <p className="text-[10px] md:text-[13px] text-[#4A5568] leading-none mt-0.5">{email}</p>
+              <p className="text-[11px] md:text-xs text-slate-500 leading-none mt-1 truncate">{email}</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm md:text-md font-medium text-[#8892B0] hover:text-red-400 hover:bg-red-500/10 border border-white/5 hover:border-red-500/20 transition-all"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M4.5 6h5M7.5 4l2 2-2 2M7 1.5H2.5a1 1 0 00-1 1v7a1 1 0 001 1H7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Logout
-          </button>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/"
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-300 bg-white/[0.05] border border-white/[0.1] hover:bg-white/[0.08] hover:border-white/[0.15] rounded-xl transition-all active:scale-[0.98]"
+            >
+              <Home size={15} />
+              Beranda
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-300 bg-white/[0.05] border border-white/[0.1] hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 rounded-xl transition-all active:scale-[0.98]"
+            >
+              <LogOut size={15} />
+              Keluar
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <main className="relative z-10 max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-6">
 
-        {/* Stats bar */}
-        <div className="flex items-center justify-between">
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight">Catatan Saya</h1>
-            <p className="text-xs md:text-sm text-[#4A5568] mt-0.5">{notes.length} catatan tersimpan</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">Catatan Saya</h1>
+            <p className="text-sm md:text-base text-slate-400 mt-1">Kelola semua ide dan catatanmu di satu tempat.</p>
           </div>
           {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4A5568]" width="15" height="15" viewBox="0 0 13 13" fill="none">
-              <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M9 9l2.5 2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-            </svg>
+          <div className="relative w-full sm:w-64">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Cari catatan..."
-              className="bg-[#1E2440]/60 border border-white/8 focus:border-indigo-500/40 rounded-xl pl-8 pr-4 py-1.5 text-sm text-[#F0F4FF] placeholder-[#4A5568] outline-none transition-all w-44 focus:w-56 h-10"
+              className="w-full bg-white/[0.05] border border-white/[0.1] hover:border-white/[0.15] focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
             />
           </div>
         </div>
 
-        {/* Form */}
-        <div className="bg-[#1E2440]/60 border border-white/5 rounded-2xl p-5 backdrop-blur-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-1 h-4 rounded-full bg-indigo-500" />
-            <h2 className="text-md font-semibold text-[#A5B4FC]">
-              {editId ? "Edit Catatan" : "Catatan Baru"}
-            </h2>
+        {/* Stats — konsisten dengan landing page */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { value: String(notes.length), label: "Total Catatan" },
+            { value: String(totalWords), label: "Total Kata" },
+            { value: String(thisMonthCount), label: "Bulan Ini" },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-white/[0.03] border border-white/[0.08] rounded-2xl px-3 py-4 text-center backdrop-blur-sm"
+            >
+              <div className="text-xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">
+                {stat.value}
+              </div>
+              <div className="text-slate-500 text-[11px] md:text-sm mt-0.5">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Editor card — glassmorphism ala auth */}
+        <div className="bg-white/[0.03] border border-white/[0.08] rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-2xl shadow-black/20">
+          <div className="flex items-center justify-between gap-3 mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                {editId ? <Pencil size={16} className="text-indigo-400" /> : <NotebookPen size={16} className="text-indigo-400" />}
+              </div>
+              <div>
+                <h2 className="font-semibold text-white leading-tight">
+                  {editId ? "Edit Catatan" : "Catatan Baru"}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {editId ? "Perbarui catatan yang sudah ada" : "Tuliskan ide sebelum terlupakan"}
+                </p>
+              </div>
+            </div>
+            {editId && (
+              <span className="flex items-center gap-1.5 text-xs font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1.5 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                Mode Edit
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="ml-0.5 text-indigo-400 hover:text-indigo-200 transition-colors"
+                  title="Batalkan edit"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            )}
           </div>
 
-          <form onSubmit={handleSave} className="space-y-3">
+          <form onSubmit={handleSave} className="space-y-4">
             <input
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="Judul catatan..."
               required
-              className="w-full bg-[#0A0F1E]/50 border border-white/8 hover:border-white/15 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 rounded-xl px-4 py-2.5 text-sm text-[#F0F4FF] placeholder-[#4A5568] outline-none transition-all"
+              className="w-full bg-white/[0.05] border border-white/[0.1] hover:border-white/[0.15] focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-sm md:text-base text-white placeholder-slate-500 outline-none transition-all font-medium"
             />
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder="Tulis catatanmu di sini..."
               rows={4}
-              className="w-full bg-[#0A0F1E]/50 border border-white/8 hover:border-white/15 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 rounded-xl px-4 py-2.5 text-sm text-[#F0F4FF] placeholder-[#4A5568] outline-none transition-all resize-y"
+              className="w-full bg-white/[0.05] border border-white/[0.1] hover:border-white/[0.15] focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-sm md:text-base text-white placeholder-slate-500 outline-none transition-all resize-y leading-relaxed"
             />
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-medium rounded-xl transition-all hover:shadow-lg hover:shadow-indigo-600/20 active:scale-[0.98] flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-all hover:shadow-lg hover:shadow-indigo-600/25 active:scale-[0.98] flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="5" stroke="white" strokeOpacity="0.3" strokeWidth="2"/>
-                      <path d="M12 7a5 5 0 00-5-5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeOpacity="0.3" strokeWidth="3"/>
+                      <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
                     </svg>
                     Menyimpan...
                   </>
@@ -209,7 +278,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-5 py-2.5 border border-white/10 hover:border-white/20 text-[#8892B0] hover:text-[#F0F4FF] text-sm font-medium rounded-xl transition-all"
+                  className="px-5 py-3 bg-white/[0.05] border border-white/[0.1] hover:bg-white/[0.08] hover:border-white/[0.15] text-slate-300 text-sm font-medium rounded-xl transition-all active:scale-[0.98]"
                 >
                   Batal
                 </button>
@@ -220,18 +289,15 @@ export default function DashboardPage() {
 
         {/* Notes list */}
         {filtered.length === 0 ? (
-          <div className="text-center py-16 bg-[#1E2440]/30 border border-dashed border-white/8 rounded-2xl">
-            <div className="w-12 h-12 rounded-xl bg-[#1E2440] border border-white/8 flex items-center justify-center mx-auto mb-4">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="3" y="2" width="14" height="16" rx="2" stroke="#4A5568" strokeWidth="1.5"/>
-                <path d="M7 7h6M7 10h4" stroke="#4A5568" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
+          <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/[0.1] rounded-3xl">
+            <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mx-auto mb-4">
+              <FileText size={22} className="text-slate-500" />
             </div>
-            <p className="text-[#4A5568] text-sm font-medium">
+            <p className="text-slate-400 text-sm font-medium">
               {search ? "Tidak ada catatan yang cocok" : "Belum ada catatan"}
             </p>
-            <p className="text-[#4A5568] text-xs mt-1 opacity-60">
-              {search ? "Coba kata kunci lain" : "Mulai tulis catatan pertama kamu"}
+            <p className="text-slate-500 text-xs mt-1">
+              {search ? "Coba kata kunci lain" : "Mulai tulis catatan pertama kamu di atas"}
             </p>
           </div>
         ) : (
@@ -243,23 +309,24 @@ export default function DashboardPage() {
                   key={note.id}
                   ref={el => { cardRefs.current[note.id] = el }}
                   onClick={() => handleCardClick(note.id)}
-                  className={`group bg-[#1E2440]/60 border rounded-2xl p-5 transition-all duration-200 cursor-pointer select-none
-                    hover:border-indigo-500/20 hover:bg-[#1E2440]/80
-                    ${editId === note.id ? 'border-indigo-500/30 bg-[#1E2440]/80' : 'border-white/5'}
-                    ${isActive ? '!border-indigo-500/30 !bg-[#1E2440]/80' : ''}
+                  className={`group border backdrop-blur-sm rounded-2xl p-5 md:p-6 transition-all duration-200 cursor-pointer select-none
+                    ${editId === note.id || isActive
+                      ? 'border-indigo-500/40 bg-white/[0.06] hover:border-indigo-500/40 hover:bg-white/[0.06]'
+                      : 'border-white/[0.08] bg-white/[0.03] hover:border-indigo-500/25 hover:bg-white/[0.05]'}
                   `}
                 >
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm md:text-md text-[#F0F4FF] leading-snug">
+                      <h3 className="font-semibold text-sm md:text-base text-white leading-snug">
                         {note.title}
                       </h3>
                       {note.content && (
-                        <p className="text-[#8892B0] text-xs md:text-sm mt-2 line-clamp-2 leading-relaxed">
+                        <p className="text-slate-400 text-xs md:text-sm mt-2 line-clamp-2 leading-relaxed">
                           {note.content}
                         </p>
                       )}
-                      <p className="text-[10px] md:text-sm text-[#4A5568] mt-3">
+                      <p className="flex items-center gap-1.5 text-[11px] md:text-xs text-slate-500 mt-3">
+                        <Calendar size={12} />
                         {new Date(note.created_at).toLocaleDateString("id-ID", {
                           day: "numeric", month: "long", year: "numeric"
                         })}
@@ -275,37 +342,31 @@ export default function DashboardPage() {
                     >
                       <button
                         onClick={() => handleEdit(note)}
-                        className="p-2 text-[#8892B0] hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"
+                        className="p-2 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all"
                         title="Edit"
                       >
-                        <svg width="20" height="20" viewBox="0 0 13 13" fill="none">
-                          <path d="M9 1.5l2.5 2.5-7 7H2V8.5l7-7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-                        </svg>
+                        <Pencil size={16} />
                       </button>
 
                       {deleteConfirm === note.id ? (
-                        <div className="flex flex-col items-center gap-1 bg-[#1E2440]/80 border border-indigo-500/20 rounded-lg px-3 py-2">
-                          <span className="text-[13px] text-white font-bold">Hapus?</span>
-                          <div className='flex gap-2'>
-                            <button
-                              onClick={() => handleDelete(note.id)}
-                              className="text-[12px] bg-red-600 text-red-200 hover:text-red-600 hover:bg-red-200 rounded-md font-medium px-3 py-1 cursor-pointer transition-colors"
-                            >Ya</button>
-                            <button
-                              onClick={() => setDeleteConfirm(null)}
-                              className="text-[12px] text-gray-100 bg-gray-600 hover:bg-gray-100 hover:text-gray-600 rounded-md px-3 py-1 cursor-pointer transition-colors"
-                            >Batal</button>
-                          </div>
+                        <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-xl px-2.5 py-1.5">
+                          <span className="text-xs text-red-400 font-semibold whitespace-nowrap">Hapus?</span>
+                          <button
+                            onClick={() => handleDelete(note.id)}
+                            className="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/30 hover:text-red-200 rounded-lg font-medium px-2.5 py-1 cursor-pointer transition-colors"
+                          >Ya</button>
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="text-xs text-slate-400 hover:text-slate-200 rounded-lg font-medium px-2.5 py-1 cursor-pointer transition-colors"
+                          >Batal</button>
                         </div>
                       ) : (
                         <button
                           onClick={() => setDeleteConfirm(note.id)}
-                          className="p-2 text-[#8892B0] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                          className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                           title="Hapus"
                         >
-                          <svg width="20" height="20" viewBox="0 0 13 13" fill="none">
-                            <path d="M2 3.5h9M5 3.5V2.5h3v1M4 3.5l.5 7h4l.5-7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
+                          <Trash2 size={16} />
                         </button>
                       )}
                     </div>
@@ -315,7 +376,12 @@ export default function DashboardPage() {
             })}
           </div>
         )}
-      </div>
+
+        {/* Footer */}
+        <footer className="pt-6 pb-2 text-center">
+          <p className="text-xs text-slate-600">FlashNote © 2026 — Catat lebih cepat, hidup lebih rapi.</p>
+        </footer>
+      </main>
     </div>
   )
 }
